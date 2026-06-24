@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cuentas personales</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Control mensual</p>
+          <h1 id="page-title">Mis gastos personales</h1>
+        </div>
+        <div class="month-control">
+          <label for="monthFilter">Mes</label>
+          <input id="monthFilter" type="month" />
+        </div>
+      </section>
+
+      <section class="sync-panel" aria-label="Sincronizacion con Google Drive">
+        <div>
+          <strong id="driveStatus">Guardado local</strong>
+          <span id="driveDetail">Conecta Google Drive para guardar una copia en tu cuenta.</span>
+        </div>
+        <div class="sync-actions">
+          <button id="configureDriveButton" class="secondary-action" type="button">Configurar Drive</button>
+          <button id="connectDriveButton" class="primary-action compact-action" type="button">Conectar</button>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="Resumen mensual">
+        <article class="metric income">
+          <span>Ingresos</span>
+          <strong id="incomeTotal">$0</strong>
+        </article>
+        <article class="metric expense">
+          <span>Gastos</span>
+          <strong id="expenseTotal">$0</strong>
+        </article>
+        <article class="metric balance">
+          <span>Saldo</span>
+          <strong id="balanceTotal">$0</strong>
+        </article>
+        <article class="metric savings">
+          <span>Ahorro estimado</span>
+          <strong id="savingRate">0%</strong>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <form id="transactionForm" class="panel entry-form">
+          <div class="panel-heading">
+            <h2>Nuevo movimiento</h2>
+            <button class="icon-button" type="button" id="clearDataButton" title="Borrar datos del mes" aria-label="Borrar datos del mes">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+
+          <div class="type-toggle" role="radiogroup" aria-label="Tipo de movimiento">
+            <label>
+              <input type="radio" name="type" value="expense" checked />
+              <span>Gasto</span>
+            </label>
+            <label>
+              <input type="radio" name="type" value="income" />
+              <span>Ingreso</span>
+            </label>
+          </div>
+
+          <label>
+            Descripción
+            <input id="description" type="text" placeholder="Ej. Supermercado" required maxlength="60" />
+          </label>
+
+          <label>
+            Categoría
+            <select id="category" required>
+              <option value="Alimentación">Alimentación</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Vivienda">Vivienda</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Salud">Salud</option>
+              <option value="Ocio">Ocio</option>
+              <option value="Educación">Educación</option>
+              <option value="Ingreso">Ingreso</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </label>
+
+          <div class="form-row">
+            <label>
+              Monto
+              <input id="amount" type="number" min="0" step="100" placeholder="0" required />
+            </label>
+            <label>
+              Fecha
+              <input id="date" type="date" required />
+            </label>
+          </div>
+
+          <button class="primary-action" type="submit">Guardar</button>
+        </form>
+
+        <section class="panel" aria-labelledby="category-title">
+          <div class="panel-heading">
+            <h2 id="category-title">Gastos por categoría</h2>
+            <span id="categoryCount" class="soft-label">0 categorías</span>
+          </div>
+          <div id="categoryList" class="category-list empty-state">Sin gastos en este mes.</div>
+        </section>
+      </section>
+
+      <section class="panel movement-panel" aria-labelledby="movement-title">
+        <div class="panel-heading">
+          <h2 id="movement-title">Movimientos</h2>
+          <div class="table-actions">
+            <button id="exportButton" class="secondary-action" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Detalle</th>
+                <th>Categoría</th>
+                <th>Tipo</th>
+                <th class="amount-cell">Monto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="transactionTable"></tbody>
+          </table>
+          <p id="emptyMessage" class="empty-state">Todavía no hay movimientos guardados.</p>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="driveDialog" class="drive-dialog">
+      <form method="dialog" class="panel drive-form">
+        <div class="panel-heading">
+          <h2>Google Drive</h2>
+          <button class="icon-button" value="cancel" type="submit" title="Cerrar" aria-label="Cerrar">
+            <span aria-hidden="true">x</span>
+          </button>
+        </div>
+
+        <p class="dialog-copy">
+          Usa credenciales de una aplicacion web de Google Cloud. La app guardara un archivo llamado
+          <strong>cuentas-personales.json</strong> en Google Drive.
+        </p>
+
+        <label>
+          Correo de Google
+          <input id="googleEmail" type="email" value="rgalleg22@gmail.com" autocomplete="email" />
+        </label>
+
+        <label>
+          Client ID
+          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
+        </label>
+
+        <label>
+          API key
+          <input id="googleApiKey" type="text" placeholder="AIza..." />
+        </label>
+
+        <menu class="dialog-actions">
+          <button class="secondary-action" value="cancel" type="submit">Cancelar</button>
+          <button id="saveDriveConfigButton" class="primary-action compact-action" value="default" type="button">Guardar</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
