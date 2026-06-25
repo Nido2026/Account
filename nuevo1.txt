@@ -1,0 +1,14 @@
+https://ynkexabletqnbxsvrgjv.supabase.co
+
+sb_publishable_CV6JqRLvr11shkXvsEX9VQ_APGGicMQ
+
+postgresql://postgres:[YOUR-PASSWORD]@db.ynkexabletqnbxsvrgjv.supabase.co:5432/postgres
+
+
+supabase login
+supabase init
+supabase link --project-ref ynkexabletqnbxsvrgjv
+
+
+sb_publishable_yLQLbajYt815hBKAYhsEXw_KNmCUnhc
+https://dinrwcwdxmkcbtyxqlbn.supabase.co

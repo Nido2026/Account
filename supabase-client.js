@@ -36,14 +36,15 @@ function initSupabase() {
     return false;
   }
 
-  // Verificar que el SDK esté cargado (CDN)
-  if (typeof window.supabase === 'undefined') {
+  // Verificar que el SDK esté cargado (CDN) — el UMD puede exponerlo de dos formas
+  const supabaseLib = window.supabase ?? window.Supabase ?? null;
+  if (!supabaseLib || typeof supabaseLib.createClient !== 'function') {
     console.error('[DB] SDK de Supabase no cargado. Verifica la conexión a internet.');
     return false;
   }
 
   try {
-    _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    _supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,      // Mantiene sesión entre recargas
         autoRefreshToken: true,    // Renueva tokens automáticamente
