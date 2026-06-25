@@ -1,181 +1,850 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cuentas personales</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Gestión de finanzas personales — controla tus ingresos y gastos mensuales con reportes detallados." />
+    <meta name="theme-color" content="#F5F1E8" />
+    <title>FinanzasApp — Control Personal</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
-    <main class="app-shell">
-      <section class="topbar" aria-labelledby="page-title">
-        <div>
-          <p class="eyebrow">Control mensual</p>
-          <h1 id="page-title">Mis gastos personales</h1>
-        </div>
-        <div class="month-control">
-          <label for="monthFilter">Mes</label>
-          <input id="monthFilter" type="month" />
-        </div>
-      </section>
 
-      <section class="sync-panel" aria-label="Sincronizacion con Google Drive">
-        <div>
-          <strong id="driveStatus">Guardado local</strong>
-          <span id="driveDetail">Conecta Google Drive para guardar una copia en tu cuenta.</span>
-        </div>
-        <div class="sync-actions">
-          <button id="configureDriveButton" class="secondary-action" type="button">Configurar Drive</button>
-          <button id="connectDriveButton" class="primary-action compact-action" type="button">Conectar</button>
-        </div>
-      </section>
+    <!-- ========================================================
+         PANTALLA DE AUTENTICACIÓN
+         ======================================================== -->
+    <div id="authScreen" class="auth-screen" role="main" aria-label="Inicio de sesión">
+      <div class="auth-bg-orb auth-orb-1" aria-hidden="true"></div>
+      <div class="auth-bg-orb auth-orb-2" aria-hidden="true"></div>
 
-      <section class="summary-grid" aria-label="Resumen mensual">
-        <article class="metric income">
-          <span>Ingresos</span>
-          <strong id="incomeTotal">$0</strong>
-        </article>
-        <article class="metric expense">
-          <span>Gastos</span>
-          <strong id="expenseTotal">$0</strong>
-        </article>
-        <article class="metric balance">
-          <span>Saldo</span>
-          <strong id="balanceTotal">$0</strong>
-        </article>
-        <article class="metric savings">
-          <span>Ahorro estimado</span>
-          <strong id="savingRate">0%</strong>
-        </article>
-      </section>
+      <div class="auth-container">
+        <!-- Brand -->
+        <div class="auth-brand" aria-hidden="true">
+          <h1 class="auth-app-title">FinanzasApp</h1>
+        </div>
 
-      <section class="workspace">
-        <form id="transactionForm" class="panel entry-form">
-          <div class="panel-heading">
-            <h2>Nuevo movimiento</h2>
-            <button class="icon-button" type="button" id="clearDataButton" title="Borrar datos del mes" aria-label="Borrar datos del mes">
-              <span aria-hidden="true">×</span>
+        <!-- Card -->
+        <div class="auth-card" role="region" aria-label="Formulario de acceso">
+          <!-- Tabs login/register -->
+          <div class="auth-tabs" role="tablist" aria-label="Tipo de acceso">
+            <button class="auth-tab active" id="tabLogin" role="tab" aria-selected="true" aria-controls="panelLogin" data-tab="login">
+              Iniciar sesión
+            </button>
+            <button class="auth-tab" id="tabRegister" role="tab" aria-selected="false" aria-controls="panelRegister" data-tab="register">
+              Crear cuenta
             </button>
           </div>
 
-          <div class="type-toggle" role="radiogroup" aria-label="Tipo de movimiento">
-            <label>
-              <input type="radio" name="type" value="expense" checked />
-              <span>Gasto</span>
-            </label>
-            <label>
-              <input type="radio" name="type" value="income" />
-              <span>Ingreso</span>
-            </label>
+          <!-- Panel Login -->
+          <div id="panelLogin" role="tabpanel" aria-labelledby="tabLogin">
+            <form id="loginForm" class="auth-form" novalidate>
+              <div class="field-group">
+                <label for="loginEmail">Correo electrónico</label>
+                <input id="loginEmail" type="email" placeholder="tu@correo.com" required
+                       autocomplete="email" inputmode="email" />
+              </div>
+              <div class="field-group">
+                <label for="loginPassword">Contraseña</label>
+                <div class="password-wrap">
+                  <input id="loginPassword" type="password" placeholder="••••••••" required
+                         autocomplete="current-password" minlength="6" />
+                  <button type="button" class="toggle-pwd" id="toggleLoginPwd"
+                          aria-label="Mostrar/ocultar contraseña">
+                    <svg id="eyeLoginIcon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div id="loginError" class="auth-error" role="alert" aria-live="assertive" hidden></div>
+              <button type="submit" class="btn-primary btn-full" id="loginBtn">
+                <span class="btn-text">Iniciar sesión</span>
+                <span class="btn-spinner" aria-hidden="true" hidden></span>
+              </button>
+              <div class="auth-divider" aria-hidden="true"><span>o</span></div>
+              <button type="button" class="btn-ghost btn-full" id="offlineBtn">
+                Continuar sin cuenta (modo offline)
+              </button>
+            </form>
           </div>
 
-          <label>
-            Descripción
-            <input id="description" type="text" placeholder="Ej. Supermercado" required maxlength="60" />
-          </label>
-
-          <label>
-            Categoría
-            <select id="category" required>
-              <option value="Alimentación">Alimentación</option>
-              <option value="Transporte">Transporte</option>
-              <option value="Vivienda">Vivienda</option>
-              <option value="Servicios">Servicios</option>
-              <option value="Salud">Salud</option>
-              <option value="Ocio">Ocio</option>
-              <option value="Educación">Educación</option>
-              <option value="Ingreso">Ingreso</option>
-              <option value="Otros">Otros</option>
-            </select>
-          </label>
-
-          <div class="form-row">
-            <label>
-              Monto
-              <input id="amount" type="number" min="0" step="100" placeholder="0" required />
-            </label>
-            <label>
-              Fecha
-              <input id="date" type="date" required />
-            </label>
+          <!-- Panel Register -->
+          <div id="panelRegister" role="tabpanel" aria-labelledby="tabRegister" hidden>
+            <form id="registerForm" class="auth-form" novalidate>
+              <div class="field-group">
+                <label for="registerEmail">Correo electrónico</label>
+                <input id="registerEmail" type="email" placeholder="tu@correo.com" required
+                       autocomplete="email" inputmode="email" />
+              </div>
+              <div class="field-group">
+                <label for="registerPassword">Contraseña</label>
+                <div class="password-wrap">
+                  <input id="registerPassword" type="password" placeholder="Mínimo 6 caracteres"
+                         required autocomplete="new-password" minlength="6" />
+                  <button type="button" class="toggle-pwd" id="toggleRegPwd"
+                          aria-label="Mostrar/ocultar contraseña">
+                    <svg id="eyeRegIcon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+                <small class="field-hint">Al crear tu cuenta, tus datos se guardan en la nube de forma segura.</small>
+              </div>
+              <div id="registerError" class="auth-error" role="alert" aria-live="assertive" hidden></div>
+              <button type="submit" class="btn-primary btn-full" id="registerBtn">
+                <span class="btn-text">Crear cuenta gratis</span>
+                <span class="btn-spinner" aria-hidden="true" hidden></span>
+              </button>
+            </form>
           </div>
 
-          <button class="primary-action" type="submit">Guardar</button>
-        </form>
+          <!-- Nota cuando Supabase no está configurado -->
+          <p class="auth-note" id="authConfigNote" hidden>
+            ⚠️ Supabase no configurado. Edita <strong>config.js</strong> para activar la nube, o usa el modo offline.
+          </p>
+        </div>
+      </div>
+    </div>
 
-        <section class="panel" aria-labelledby="category-title">
-          <div class="panel-heading">
-            <h2 id="category-title">Gastos por categoría</h2>
-            <span id="categoryCount" class="soft-label">0 categorías</span>
+
+    <!-- ========================================================
+         APP SHELL (oculto hasta autenticación)
+         ======================================================== -->
+    <div id="appShell" class="app-shell" hidden>
+
+      <!-- ── SIDEBAR (escritorio) ── -->
+      <aside class="sidebar" role="complementary" aria-label="Menú principal">
+        <div class="sidebar-brand" aria-label="FinanzasApp">
+          <div class="brand-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
           </div>
-          <div id="categoryList" class="category-list empty-state">Sin gastos en este mes.</div>
+          <span class="brand-name">FinanzasApp</span>
+        </div>
+
+        <nav class="sidebar-nav" role="navigation" aria-label="Vistas de la aplicación">
+          <button class="nav-item active" data-view="dashboard" id="navDashboard" aria-current="page">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            <span class="nav-label">Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="transactions" id="navTransactions">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span class="nav-label">Transacciones</span>
+          </button>
+          <button class="nav-item" data-view="reports" id="navReports">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span class="nav-label">Reportes</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-pill" id="userPill">
+            <div class="user-avatar" id="userAvatar" aria-hidden="true">U</div>
+            <div class="user-meta">
+              <span class="user-name" id="userName">Usuario</span>
+              <span class="user-badge" id="userBadge">Offline</span>
+            </div>
+          </div>
+          <button class="btn-icon sidebar-logout" id="logoutBtn" title="Cerrar sesión"
+                  aria-label="Cerrar sesión">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ── CONTENIDO PRINCIPAL ── -->
+      <main class="app-main" id="appMain">
+
+        <!-- Header móvil -->
+        <header class="mobile-header" role="banner">
+          <div class="mobile-brand" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+          </div>
+          <span class="mobile-view-title" id="mobileTitle">Dashboard</span>
+          <button class="btn-icon btn-accent" id="mobileAddBtn" aria-label="Nueva transacción">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </header>
+
+        <!-- ── VISTA: DASHBOARD ── -->
+        <section id="dashboardView" class="view active" aria-labelledby="dashTitle">
+          <div class="view-header">
+            <div class="view-heading">
+              <h2 id="dashTitle" class="view-title">Dashboard</h2>
+              <p class="view-period" id="dashPeriodLabel">Cargando...</p>
+            </div>
+            <div class="view-actions">
+              <div class="period-nav" role="group" aria-label="Período">
+                <button class="period-btn" id="dashPrevMonth" aria-label="Mes anterior">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <button type="button" id="dashMonthPicker" class="month-picker-btn" data-month-picker="dash" aria-label="Seleccionar mes" aria-haspopup="dialog" aria-expanded="false">Cargando...</button>
+                <button class="period-btn" id="dashNextMonth" aria-label="Mes siguiente">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+              <button class="btn-primary btn-add" id="dashAddBtn" aria-label="Nueva transacción">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Nueva</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjetas de métricas -->
+          <div class="metrics-grid" role="list">
+            <article class="metric-card metric-income" role="listitem">
+              <div class="metric-icon-wrap income-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round">
+                  <line x1="12" y1="19" x2="12" y2="5"/>
+                  <polyline points="5 12 12 5 19 12"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span class="metric-label">Ingresos</span>
+                <strong class="metric-value" id="dashIncome">$0</strong>
+                <span class="metric-delta" id="dashIncomeDelta" aria-label="Comparado con mes anterior"></span>
+              </div>
+            </article>
+
+            <article class="metric-card metric-expense" role="listitem">
+              <div class="metric-icon-wrap expense-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <polyline points="19 12 12 19 5 12"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span class="metric-label">Gastos</span>
+                <strong class="metric-value" id="dashExpense">$0</strong>
+                <span class="metric-delta" id="dashExpenseDelta" aria-label="Comparado con mes anterior"></span>
+              </div>
+            </article>
+
+            <article class="metric-card metric-balance" role="listitem">
+              <div class="metric-icon-wrap balance-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round">
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span class="metric-label">Balance</span>
+                <strong class="metric-value" id="dashBalance">$0</strong>
+              </div>
+            </article>
+
+            <article class="metric-card metric-savings" role="listitem">
+              <div class="metric-icon-wrap savings-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round">
+                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                  <polyline points="16 7 22 7 22 13"/>
+                </svg>
+              </div>
+              <div class="metric-body">
+                <span class="metric-label">Tasa de ahorro</span>
+                <strong class="metric-value" id="dashSavings">0%</strong>
+              </div>
+            </article>
+          </div>
+
+          <!-- Gráficos -->
+          <div class="charts-row">
+            <div class="chart-card chart-trend-card">
+              <div class="chart-header">
+                <h3 class="chart-title">Tendencia mensual</h3>
+                <div class="chart-legend-inline" aria-hidden="true">
+                  <span class="legend-dot legend-income"></span><span>Ingresos</span>
+                  <span class="legend-dot legend-expense"></span><span>Gastos</span>
+                </div>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="trendChart" class="chart-canvas" aria-label="Gráfico de tendencia mensual"></canvas>
+                <p class="chart-empty" id="trendEmpty" hidden>Sin datos en los últimos 6 meses.</p>
+              </div>
+            </div>
+
+            <div class="chart-card chart-donut-card">
+              <div class="chart-header">
+                <h3 class="chart-title">Gastos por categoría</h3>
+              </div>
+              <div class="chart-wrap donut-layout">
+                <div class="donut-canvas-wrap">
+                  <canvas id="categoryChart" class="chart-canvas donut-chart"
+                          aria-label="Gráfico de torta de gastos por categoría"></canvas>
+                </div>
+                <p class="chart-empty" id="categoryEmpty" hidden>Sin gastos.</p>
+                <div class="donut-legend" id="categoryLegend" aria-label="Leyenda de categorías"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Últimas transacciones -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Últimas transacciones</h3>
+              <button class="btn-ghost btn-sm" id="dashSeeAll" aria-label="Ver todas las transacciones">
+                Ver todas
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </div>
+            <div id="recentList" class="recent-list" aria-label="Últimas transacciones del mes">
+              <p class="empty-state">No hay transacciones este mes.</p>
+            </div>
+          </div>
         </section>
-      </section>
 
-      <section class="panel movement-panel" aria-labelledby="movement-title">
-        <div class="panel-heading">
-          <h2 id="movement-title">Movimientos</h2>
-          <div class="table-actions">
-            <button id="exportButton" class="secondary-action" type="button">Exportar CSV</button>
+
+        <!-- ── VISTA: TRANSACCIONES ── -->
+        <section id="transactionsView" class="view" aria-labelledby="txnTitle" hidden>
+          <div class="view-header">
+            <div class="view-heading">
+              <h2 id="txnTitle" class="view-title">Transacciones</h2>
+            </div>
+            <div class="view-actions">
+              <button class="btn-secondary btn-sm" id="exportCsvBtn" aria-label="Exportar a CSV">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                CSV
+              </button>
+              <button class="btn-secondary btn-sm" id="exportPdfBtn" aria-label="Exportar a PDF">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                PDF
+              </button>
+              <button class="btn-primary btn-add" id="txnAddBtn" aria-label="Nueva transacción">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Nueva</span>
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Detalle</th>
-                <th>Categoría</th>
-                <th>Tipo</th>
-                <th class="amount-cell">Monto</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="transactionTable"></tbody>
-          </table>
-          <p id="emptyMessage" class="empty-state">Todavía no hay movimientos guardados.</p>
-        </div>
-      </section>
-    </main>
 
-    <dialog id="driveDialog" class="drive-dialog">
-      <form method="dialog" class="panel drive-form">
-        <div class="panel-heading">
-          <h2>Google Drive</h2>
-          <button class="icon-button" value="cancel" type="submit" title="Cerrar" aria-label="Cerrar">
-            <span aria-hidden="true">x</span>
+          <!-- Barra de filtros -->
+          <div class="filters-bar" role="search" aria-label="Filtros de transacciones">
+            <div class="filter-row">
+              <button type="button" id="txnMonthPicker" class="month-picker-btn standalone" data-month-picker="txn" aria-label="Filtrar por mes" aria-haspopup="dialog" aria-expanded="false">Cargando...</button>
+
+              <div class="filter-tabs" role="group" aria-label="Filtrar por tipo">
+                <button class="filter-tab active" data-type="all" id="filterAll">Todos</button>
+                <button class="filter-tab" data-type="income" id="filterIncome">Ingresos</button>
+                <button class="filter-tab" data-type="expense" id="filterExpense">Gastos</button>
+              </div>
+
+              <select id="txnCategoryFilter" class="filter-select" aria-label="Filtrar por categoría">
+                <option value="all">Todas las categorías</option>
+                <optgroup label="Gastos">
+                  <option value="Alimentación">Alimentación</option>
+                  <option value="Transporte">Transporte</option>
+                  <option value="Vivienda">Vivienda</option>
+                  <option value="Servicios">Servicios</option>
+                  <option value="Salud">Salud</option>
+                  <option value="Ocio">Ocio</option>
+                  <option value="Educación">Educación</option>
+                  <option value="Ropa">Ropa</option>
+                  <option value="Tecnología">Tecnología</option>
+                  <option value="Otros">Otros</option>
+                </optgroup>
+                <optgroup label="Ingresos">
+                  <option value="Sueldo">Sueldo</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Inversión">Inversión</option>
+                  <option value="Otros ingresos">Otros ingresos</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="search-wrap">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="search" id="txnSearch" class="search-input"
+                     placeholder="Buscar transacción..." aria-label="Buscar transacción" />
+            </div>
+          </div>
+
+          <!-- Resumen rápido -->
+          <div class="txn-summary" id="txnSummaryBar" aria-live="polite">
+            <span id="txnCount" class="txn-count">0 transacciones</span>
+            <div class="txn-totals">
+              <span class="txn-total-income" id="txnTotalIncome"></span>
+              <span class="txn-total-expense" id="txnTotalExpense"></span>
+            </div>
+          </div>
+
+          <!-- Tabla -->
+          <div class="panel table-panel">
+            <div class="table-wrap">
+              <table id="txnTable" aria-label="Historial de transacciones">
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Descripción</th>
+                    <th scope="col" class="hide-mobile">Categoría</th>
+                    <th scope="col" class="hide-mobile">Tipo</th>
+                    <th scope="col" class="text-right">Monto</th>
+                    <th scope="col"><span class="sr-only">Acciones</span></th>
+                  </tr>
+                </thead>
+                <tbody id="txnTableBody"></tbody>
+              </table>
+            </div>
+            <p id="txnEmpty" class="empty-state" hidden>
+              No hay transacciones que coincidan con los filtros.
+            </p>
+          </div>
+        </section>
+
+
+        <!-- ── VISTA: REPORTES ── -->
+        <section id="reportsView" class="view" aria-labelledby="rptTitle" hidden>
+          <div class="view-header">
+            <div class="view-heading">
+              <h2 id="rptTitle" class="view-title">Reportes</h2>
+              <p class="view-period" id="rptPeriodLabel">Cargando...</p>
+            </div>
+            <div class="view-actions">
+              <div class="period-nav" role="group" aria-label="Período">
+                <button class="period-btn" id="rptPrevMonth" aria-label="Mes anterior">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <button type="button" id="rptMonthPicker" class="month-picker-btn" data-month-picker="rpt" aria-label="Seleccionar mes" aria-haspopup="dialog" aria-expanded="false">Cargando...</button>
+                <button class="period-btn" id="rptNextMonth" aria-label="Mes siguiente">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+              <button class="btn-secondary btn-sm" id="rptExportBtn" aria-label="Exportar reporte en PDF">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Exportar PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Métricas del reporte -->
+          <div class="metrics-grid" role="list">
+            <article class="metric-card metric-income" role="listitem">
+              <div class="metric-body">
+                <span class="metric-label">Total ingresos</span>
+                <strong class="metric-value" id="rptIncome">$0</strong>
+              </div>
+            </article>
+            <article class="metric-card metric-expense" role="listitem">
+              <div class="metric-body">
+                <span class="metric-label">Total gastos</span>
+                <strong class="metric-value" id="rptExpense">$0</strong>
+              </div>
+            </article>
+            <article class="metric-card metric-balance" role="listitem">
+              <div class="metric-body">
+                <span class="metric-label">Saldo neto</span>
+                <strong class="metric-value" id="rptBalance">$0</strong>
+              </div>
+            </article>
+            <article class="metric-card metric-savings" role="listitem">
+              <div class="metric-body">
+                <span class="metric-label">Tasa de ahorro</span>
+                <strong class="metric-value" id="rptSavings">0%</strong>
+              </div>
+            </article>
+          </div>
+
+          <!-- Gráficos del reporte -->
+          <div class="charts-row">
+            <div class="chart-card chart-donut-card">
+              <div class="chart-header">
+                <h3 class="chart-title">Distribución de gastos</h3>
+              </div>
+              <div class="chart-wrap donut-layout">
+                <div class="donut-canvas-wrap">
+                  <canvas id="rptDonutChart" class="chart-canvas donut-chart"
+                          aria-label="Distribución de gastos por categoría"></canvas>
+                </div>
+                <p class="chart-empty" id="rptDonutEmpty" hidden>Sin gastos este mes.</p>
+                <div class="donut-legend" id="rptDonutLegend" aria-label="Leyenda de categorías"></div>
+              </div>
+            </div>
+
+            <div class="chart-card chart-trend-card">
+              <div class="chart-header">
+                <h3 class="chart-title">Ingresos vs Gastos</h3>
+                <div class="chart-legend-inline" aria-hidden="true">
+                  <span class="legend-dot legend-income"></span><span>Ingresos</span>
+                  <span class="legend-dot legend-expense"></span><span>Gastos</span>
+                </div>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="rptTrendChart" class="chart-canvas"
+                        aria-label="Comparativa de ingresos y gastos por mes"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla de categorías -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Desglose por categoría</h3>
+            </div>
+            <div class="table-wrap">
+              <table aria-label="Desglose de gastos por categoría">
+                <thead>
+                  <tr>
+                    <th scope="col">Categoría</th>
+                    <th scope="col" class="text-right">Monto</th>
+                    <th scope="col" class="text-right hide-mobile">% del total</th>
+                    <th scope="col" class="text-right hide-mobile">Movimientos</th>
+                    <th scope="col" class="hide-mobile"><span class="sr-only">Barra</span></th>
+                  </tr>
+                </thead>
+                <tbody id="rptCategoryTable"></tbody>
+              </table>
+            </div>
+            <p id="rptEmpty" class="empty-state" hidden>Sin datos para este período.</p>
+          </div>
+        </section>
+
+      </main><!-- /app-main -->
+
+      <!-- ── NAVEGACIÓN MÓVIL (bottom nav) ── -->
+      <nav class="bottom-nav" role="navigation" aria-label="Navegación principal móvil">
+        <button class="bottom-nav-item active" data-view="dashboard" aria-label="Dashboard" aria-current="page">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span class="bottom-nav-label">Inicio</span>
+        </button>
+
+        <button class="bottom-nav-item" data-view="transactions" aria-label="Transacciones">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          <span class="bottom-nav-label">Historial</span>
+        </button>
+
+        <!-- FAB central -->
+        <button class="bottom-nav-fab" id="fabAddBtn" aria-label="Nueva transacción">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+
+        <button class="bottom-nav-item" data-view="reports" aria-label="Reportes">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="bottom-nav-label">Reportes</span>
+        </button>
+
+        <button class="bottom-nav-item" id="bottomLogoutBtn" aria-label="Cerrar sesión">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span class="bottom-nav-label">Salir</span>
+        </button>
+      </nav>
+
+    </div><!-- /appShell -->
+
+
+    <!-- ========================================================
+         MODAL: AGREGAR / EDITAR TRANSACCIÓN
+         ======================================================== -->
+    <dialog id="txnModal" class="modal" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modalTitle">Nueva transacción</h3>
+          <button type="button" class="btn-icon" id="closeModalBtn" aria-label="Cerrar modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
 
-        <p class="dialog-copy">
-          Usa credenciales de una aplicacion web de Google Cloud. La app guardara un archivo llamado
-          <strong>cuentas-personales.json</strong> en Google Drive.
-        </p>
+        <form id="txnForm" novalidate>
+          <!-- Toggle tipo (Gasto / Ingreso) -->
+          <div class="type-toggle" role="group" aria-label="Tipo de transacción">
+            <label class="type-option" id="optExpense">
+              <input type="radio" name="txnType" value="expense" checked />
+              <span class="type-label type-expense">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <polyline points="19 12 12 19 5 12"/>
+                </svg>
+                Gasto
+              </span>
+            </label>
+            <label class="type-option" id="optIncome">
+              <input type="radio" name="txnType" value="income" />
+              <span class="type-label type-income">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                  <line x1="12" y1="19" x2="12" y2="5"/>
+                  <polyline points="5 12 12 5 19 12"/>
+                </svg>
+                Ingreso
+              </span>
+            </label>
+          </div>
 
-        <label>
-          Correo de Google
-          <input id="googleEmail" type="email" value="rgalleg22@gmail.com" autocomplete="email" />
-        </label>
+          <div class="form-grid">
+            <div class="field-group field-full">
+              <label for="fDescription">Descripción <span class="required" aria-hidden="true">*</span></label>
+              <input id="fDescription" type="text" placeholder="Ej. Supermercado La Reina"
+                     required maxlength="80" autocomplete="off" />
+            </div>
 
-        <label>
-          Client ID
-          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-        </label>
+            <div class="field-group">
+              <label for="fCategory">Categoría <span class="required" aria-hidden="true">*</span></label>
+              <select id="fCategory" required>
+                <optgroup label="Gastos">
+                  <option value="Alimentación">🛒 Alimentación</option>
+                  <option value="Transporte">🚌 Transporte</option>
+                  <option value="Vivienda">🏠 Vivienda</option>
+                  <option value="Servicios">⚡ Servicios</option>
+                  <option value="Salud">💊 Salud</option>
+                  <option value="Ocio">🎬 Ocio</option>
+                  <option value="Educación">📚 Educación</option>
+                  <option value="Ropa">👕 Ropa</option>
+                  <option value="Tecnología">💻 Tecnología</option>
+                  <option value="Otros">📦 Otros</option>
+                </optgroup>
+                <optgroup label="Ingresos">
+                  <option value="Sueldo">💰 Sueldo</option>
+                  <option value="Freelance">💼 Freelance</option>
+                  <option value="Inversión">📈 Inversión</option>
+                  <option value="Otros ingresos">📬 Otros ingresos</option>
+                </optgroup>
+              </select>
+            </div>
 
-        <label>
-          API key
-          <input id="googleApiKey" type="text" placeholder="AIza..." />
-        </label>
+            <div class="field-group">
+              <label for="fDate">Fecha <span class="required" aria-hidden="true">*</span></label>
+              <div class="date-picker" id="datePicker">
+                <input id="fDate" type="hidden" required />
+                <button type="button" class="date-display" id="fDateButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="dateCalendar">
+                  <span id="fDateLabel">Seleccionar fecha</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </button>
+                <div class="date-calendar" id="dateCalendar" role="dialog" aria-label="Seleccionar fecha" hidden>
+                  <div class="date-calendar-header">
+                    <button type="button" class="date-nav-btn" id="datePrevMonth" aria-label="Mes anterior">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m15 18-6-6 6-6"/>
+                      </svg>
+                    </button>
+                    <strong class="date-calendar-title" id="dateCalendarTitle">Mes</strong>
+                    <button type="button" class="date-nav-btn" id="dateNextMonth" aria-label="Mes siguiente">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 18 6-6-6-6"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="date-weekdays" aria-hidden="true">
+                    <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                  </div>
+                  <div class="date-days" id="dateDays" role="grid" aria-label="Dias del mes"></div>
+                  <div class="date-calendar-footer">
+                    <button type="button" class="date-footer-btn" id="dateClearBtn">Borrar</button>
+                    <button type="button" class="date-footer-btn primary" id="dateTodayBtn">Hoy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <menu class="dialog-actions">
-          <button class="secondary-action" value="cancel" type="submit">Cancelar</button>
-          <button id="saveDriveConfigButton" class="primary-action compact-action" value="default" type="button">Guardar</button>
-        </menu>
-      </form>
+            <div class="field-group field-full">
+              <label for="fAmount">
+                Monto (CLP) <span class="required" aria-hidden="true">*</span>
+              </label>
+              <div class="amount-input-wrap">
+                <span class="currency-prefix" aria-hidden="true">$</span>
+                <input id="fAmount" type="number" min="1" step="1" placeholder="0" required
+                       inputmode="numeric" aria-describedby="fAmountHint" />
+              </div>
+              <small class="field-hint" id="fAmountHint">Ingresa el monto en pesos chilenos (sin puntos ni comas)</small>
+            </div>
+
+            <div class="field-group field-full">
+              <label for="fNote">Nota <span class="field-optional">(opcional)</span></label>
+              <input id="fNote" type="text" placeholder="Información adicional..." maxlength="120" autocomplete="off" />
+            </div>
+          </div>
+
+          <div id="modalError" class="auth-error modal-error" role="alert" aria-live="assertive" hidden></div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" id="cancelModalBtn">Cancelar</button>
+            <button type="submit" class="btn-primary" id="saveModalBtn">
+              <span class="btn-text">Guardar</span>
+              <span class="btn-spinner" aria-hidden="true" hidden></span>
+            </button>
+          </div>
+        </form>
+      </div>
     </dialog>
 
-    <script src="https://apis.google.com/js/api.js"></script>
+
+    <!-- ========================================================
+         TOAST NOTIFICATIONS
+         ======================================================== -->
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <div class="month-popover" id="monthPopover" role="dialog" aria-label="Seleccionar mes" hidden>
+      <div class="month-popover-header">
+        <button type="button" class="month-popover-nav" id="monthPopoverPrev" aria-label="Año anterior">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+        <strong id="monthPopoverYear">2026</strong>
+        <button type="button" class="month-popover-nav" id="monthPopoverNext" aria-label="Año siguiente">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+      <div class="month-popover-grid" id="monthPopoverGrid" role="grid" aria-label="Meses"></div>
+      <div class="month-popover-footer">
+        <button type="button" class="month-popover-link" id="monthPopoverClear">Borrar</button>
+        <button type="button" class="month-popover-link primary" id="monthPopoverToday">Este mes</button>
+      </div>
+    </div>
+
+
+    <!-- ========================================================
+         SCRIPTS
+         ======================================================== -->
+    <!-- Supabase JS SDK (UMD) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+    <!-- App scripts (orden importante) -->
+    <script src="config.js"></script>
+    <script src="supabase-client.js"></script>
+    <!-- Inicializar mes actual antes de que app.js cargue para evitar "Cargando..." -->
+    <script>
+      (function() {
+        const now = new Date();
+        const label = now.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+        const labelCap = label.charAt(0).toUpperCase() + label.slice(1);
+        const ids = ['dashMonthPicker', 'txnMonthPicker', 'rptMonthPicker'];
+        ids.forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) el.textContent = labelCap;
+        });
+        const periodIds = ['dashPeriodLabel', 'rptPeriodLabel'];
+        periodIds.forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) el.textContent = labelCap;
+        });
+      })();
+    </script>
     <script src="app.js"></script>
+
   </body>
 </html>
