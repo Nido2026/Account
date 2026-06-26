@@ -29,11 +29,11 @@ const CAT_ICONS = {
   'Inversión': '📈', 'Otros ingresos': '📬',
 };
 
-/** Paleta de colores para gráficos (CSS variables → JS) */
+/** Paleta de colores para gráficos (tonos pastel sofisticados, acorde al tema cálido) */
 const CHART_COLORS = [
-  '#f59e0b','#3b82f6','#8b5cf6','#06b6d4','#ec4899',
-  '#f43f5e','#10b981','#f97316','#6366f1','#84cc16',
-  '#94a3b8','#fbbf24',
+  '#D98E73', '#7FA999', '#C9A66B', '#8C8FC4',
+  '#5FA8A0', '#D9A5A0', '#A8B89B', '#C97B84',
+  '#6FA8C9', '#B98ABF', '#9CA3AF', '#E0B354',
 ];
 
 /* ============================================================
@@ -737,60 +737,95 @@ function drawDonutChart(canvasId, emptyId, legendId, txns) {
   if (emptyEl) emptyEl.hidden = true;
 
   const ctx = setupCanvas(canvas);
-  const W   = canvas.getBoundingClientRect().width  || 180;
-  const H   = canvas.getBoundingClientRect().height || 180;
+  const W   = canvas.getBoundingClientRect().width  || 210;
+  const H   = canvas.getBoundingClientRect().height || 210;
   const cx  = W / 2, cy = H / 2;
-  const R   = Math.min(W, H) / 2 * 0.88;
-  const r   = R * 0.6;
+  const R   = Math.min(W, H) / 2 * 0.86;
+  const r   = R * 0.62;
 
-  ctx.clearRect(0, 0, W, H);
+  // Colores tomados del tema (fondo de tarjeta cálido / textos)
+  const cs = getComputedStyle(document.documentElement);
+  const bgCard   = (cs.getPropertyValue('--bg-card')  || '#FDFAF5').trim();
+  const textMain = (cs.getPropertyValue('--text-1')   || '#2E2A24').trim();
+  const textSoft = (cs.getPropertyValue('--text-2')   || '#6B6258').trim();
 
-  // Dibujar segmentos
-  let angle = -Math.PI / 2;
-  cats.forEach((cat, i) => {
-    const slice = (cat.amount / total) * 2 * Math.PI;
-    const color = CHART_COLORS[i % CHART_COLORS.length];
+  /**
+   * Dibuja el gráfico para una fracción `progress` (0 → 1) del total,
+   * usado para animar la entrada de forma fluida.
+   */
+  function render(progress) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.shadowColor = 'rgba(46, 42, 36, 0.18)';
+    ctx.shadowBlur  = 10;
 
+    let angle = -Math.PI / 2;
+    const sweep = progress * 2 * Math.PI;
+    cats.forEach((cat, i) => {
+      const slice = (cat.amount / total) * sweep;
+      if (slice <= 0) return;
+      const color = CHART_COLORS[i % CHART_COLORS.length];
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, angle, angle + slice);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      angle += slice;
+    });
+    ctx.restore();
+
+    // Separadores finos entre segmentos (color del fondo de la tarjeta = efecto "flotante")
+    angle = -Math.PI / 2;
+    cats.forEach(cat => {
+      const slice = (cat.amount / total) * sweep;
+      if (slice <= 0) return;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, angle, angle + slice);
+      ctx.closePath();
+      ctx.strokeStyle = bgCard;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      angle += slice;
+    });
+
+    // Círculo interior (cutout) — mismo tono que la tarjeta, look "flotante"
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, R, angle, angle + slice);
-    ctx.closePath();
-    ctx.fillStyle = color;
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    ctx.fillStyle = bgCard;
     ctx.fill();
 
-    angle += slice;
-  });
+    // Texto central
+    if (progress > 0.6) {
+      const fade = Math.min((progress - 0.6) / 0.4, 1);
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = textMain;
+      const fontSize = Math.max(Math.floor(W * 0.1), 12);
+      ctx.font = `800 ${fontSize}px Inter, sans-serif`;
+      ctx.fillText(fmtCompact(total), cx, cy - 7);
+      ctx.font = `500 ${Math.max(Math.floor(W * 0.062), 10)}px Inter, sans-serif`;
+      ctx.fillStyle = textSoft;
+      ctx.fillText('gastos', cx, cy + 11);
+      ctx.restore();
+    }
+  }
 
-  // Separadores entre segmentos
-  angle = -Math.PI / 2;
-  cats.forEach(cat => {
-    const slice = (cat.amount / total) * 2 * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, R, angle, angle + slice);
-    ctx.closePath();
-    ctx.strokeStyle = '#0d1117';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    angle += slice;
-  });
-
-  // Círculo interior (cutout)
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-  ctx.fillStyle = '#111620';
-  ctx.fill();
-
-  // Texto central
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#eef2ff';
-  const fontSize = Math.max(Math.floor(W * 0.1), 11);
-  ctx.font = `800 ${fontSize}px Inter, sans-serif`;
-  ctx.fillText(fmtCompact(total), cx, cy - 7);
-  ctx.font = `500 ${Math.max(Math.floor(W * 0.065), 9)}px Inter, sans-serif`;
-  ctx.fillStyle = '#8892aa';
-  ctx.fillText('gastos', cx, cy + 10);
+  // Animación de entrada (ease-out, ~600ms)
+  const duration = 600;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    render(eased);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 
   // Leyenda
   if (legendEl) {
