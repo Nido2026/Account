@@ -587,6 +587,14 @@ function renderTransactions() {
         ${t.type === 'expense' ? '-' : '+'}${fmtMoney(t.amount)}
       </td>
       <td class="td-actions">
+        <button class="btn-edit" data-id="${t.id}" title="Editar transacción"
+                aria-label="Editar ${escHtml(t.description)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
         <button class="btn-delete" data-id="${t.id}" title="Eliminar transacción"
                 aria-label="Eliminar ${escHtml(t.description)}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -950,6 +958,50 @@ function closeModal() {
 }
 
 /**
+ * Abre el modal en modo edición precargando los datos de la transacción.
+ * @param {string} id - UUID de la transacción a editar
+ */
+function openEditModal(id) {
+  const txn = state.transactions.find(t => t.id === id);
+  if (!txn) return;
+
+  state.editingId = id;
+  const form  = document.getElementById('txnForm');
+  const modal = document.getElementById('txnModal');
+  const error = document.getElementById('modalError');
+  if (!form || !modal) return;
+
+  // Resetear y precargar
+  form.reset();
+  if (error) error.hidden = true;
+
+  // Tipo (radio)
+  const typeRadio = form.querySelector(`[name="txnType"][value="${txn.type}"]`);
+  if (typeRadio) typeRadio.checked = true;
+
+  // Campos de texto / número
+  const fDesc = document.getElementById('fDescription');
+  const fCat  = document.getElementById('fCategory');
+  const fAmt  = document.getElementById('fAmount');
+  const fNote = document.getElementById('fNote');
+  if (fDesc) fDesc.value = txn.description;
+  if (fCat)  fCat.value  = txn.category;
+  if (fAmt)  fAmt.value  = txn.amount;
+  if (fNote) fNote.value = txn.note || '';
+
+  // Fecha
+  setFormDate(txn.date);
+
+  // Título y botón guardar
+  setTextSafe('modalTitle', 'Editar transacción');
+  const saveBtnText = document.querySelector('#saveModalBtn .btn-text');
+  if (saveBtnText) saveBtnText.textContent = 'Actualizar';
+
+  modal.showModal();
+  fDesc?.focus();
+}
+
+/**
  * Actualiza el valor de fecha del formulario y su etiqueta visible.
  * @param {string} value - Fecha 'YYYY-MM-DD'
  */
@@ -1072,22 +1124,36 @@ async function handleFormSubmit(e) {
   if (errorEl)    errorEl.hidden      = true;
 
   try {
-    const { data, error } = await saveTransaction({ type, description, category, amount, date, note });
+    if (state.editingId) {
+      // ── MODO EDICIÓN ──────────────────────────────────────
+      const { data, error } = await updateTransaction(state.editingId, { type, description, category, amount, date, note });
+      if (error) throw error;
 
-    if (error) throw error;
+      // Actualizar en estado local
+      const idx = state.transactions.findIndex(t => t.id === state.editingId);
+      if (idx !== -1) state.transactions[idx] = data;
 
-    // Agregar al estado local
-    state.transactions.unshift(data);
+      closeModal();
+      renderAll();
+      showToast(`Transacción actualizada: ${fmtMoney(amount)}`, 'success');
 
-    // Sincronizar el mes del filtro con la fecha de la transacción
-    const txnMonth = date.slice(0, 7);
-    if (txnMonth !== state.selectedMonth) {
-      setSelectedMonth(txnMonth);
+    } else {
+      // ── MODO NUEVA ────────────────────────────────────────
+      const { data, error } = await saveTransaction({ type, description, category, amount, date, note });
+      if (error) throw error;
+
+      state.transactions.unshift(data);
+
+      // Sincronizar el mes del filtro con la fecha de la transacción
+      const txnMonth = date.slice(0, 7);
+      if (txnMonth !== state.selectedMonth) {
+        setSelectedMonth(txnMonth);
+      }
+
+      closeModal();
+      renderAll();
+      showToast(`Transacción guardada: ${fmtMoney(amount)}`, 'success');
     }
-
-    closeModal();
-    renderAll();
-    showToast(`Transacción guardada: ${fmtMoney(amount)}`, 'success');
 
   } catch (err) {
     showFieldError(errorEl, err.message || 'Error al guardar. Intenta de nuevo.');
@@ -1286,24 +1352,32 @@ async function initAuth() {
   if (noteEl) noteEl.hidden = supabaseAvail;
 
   if (supabaseAvail) {
-    // Suscribir a cambios de auth
+    // Primero: cerrar cualquier sesión activa para forzar re-autenticación.
+    // Esto debe hacerse ANTES de registrar el listener para evitar que
+    // el evento SIGNED_OUT cause un flash visual del dashboard.
+    const session = await getSession();
+    if (session?.user?.email) {
+      // Pre-rellenar el email para facilitar el ingreso
+      const emailInput = document.getElementById('loginEmail');
+      if (emailInput) emailInput.value = session.user.email;
+      // Cerrar sesión silenciosamente (sin listener activo aún)
+      await signOut();
+    }
+
+    // Segundo: registrar el listener DESPUÉS del signOut inicial,
+    // así no captura el SIGNED_OUT que acabamos de provocar.
     onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === 'SIGNED_IN' && session && !state.isLoggedIn) {
         handleLoginSuccess(session.user, true);
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' && state.isLoggedIn) {
+        // Solo reaccionar a SIGNED_OUT si el usuario ya estaba dentro
+        // (es decir, cuando cierra sesión desde el botón de logout)
         showAuthScreen();
       }
     });
-
-    // Verificar sesión existente
-    const session = await getSession();
-    if (session) {
-      handleLoginSuccess(session.user, true);
-      return;
-    }
   }
 
-  // Sin sesión → mostrar pantalla de auth
+  // Siempre mostrar pantalla de auth
   showAuthScreen();
 }
 
@@ -1718,10 +1792,13 @@ function setupEventListeners() {
     }, 250);
   });
 
-  /* ── ELIMINAR TRANSACCIÓN (delegación de eventos) ─────── */
+  /* ── EDITAR / ELIMINAR TRANSACCIÓN (delegación de eventos) ─ */
   document.getElementById('txnTableBody')?.addEventListener('click', e => {
-    const btn = e.target.closest('.btn-delete');
-    if (btn?.dataset.id) handleDelete(btn.dataset.id);
+    const editBtn = e.target.closest('.btn-edit');
+    if (editBtn?.dataset.id) { openEditModal(editBtn.dataset.id); return; }
+
+    const delBtn = e.target.closest('.btn-delete');
+    if (delBtn?.dataset.id) handleDelete(delBtn.dataset.id);
   });
 
   /* ── EXPORTACIÓN ─────────────────────────────────────── */

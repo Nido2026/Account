@@ -257,6 +257,61 @@ async function saveTransaction(txnData) {
 }
 
 /**
+ * Actualiza una transacción existente por su ID.
+ * @param {string} id - UUID de la transacción
+ * @param {{type, description, category, amount, date, note}} txnData
+ * @returns {Promise<{data: object|null, error: Error|null}>}
+ */
+async function updateTransaction(id, txnData) {
+  const amount = Math.abs(Math.round(Number(txnData.amount)));
+  if (!amount || amount <= 0) {
+    return { data: null, error: new Error('El monto debe ser mayor a 0.') };
+  }
+
+  const payload = {
+    type:        txnData.type,
+    description: String(txnData.description).trim().slice(0, 80),
+    category:    txnData.category,
+    amount,
+    date:        txnData.date,
+    note:        String(txnData.note ?? '').trim().slice(0, 120),
+    updated_at:  new Date().toISOString(),
+  };
+
+  if (isSupabaseAvailable() && isLoggedIn()) {
+    try {
+      const { data, error } = await _supabaseClient
+        .from('transactions')
+        .update(payload)
+        .eq('id', id)
+        .eq('user_id', getCurrentUser().id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Actualizar caché local
+      const local = _loadLocalTransactions().map(t => t.id === id ? data : t);
+      localStorage.setItem(LOCAL_TXN_KEY, JSON.stringify(local));
+
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: err };
+    }
+  }
+
+  // Modo offline: actualizar en localStorage
+  const local = _loadLocalTransactions();
+  const idx = local.findIndex(t => t.id === id);
+  if (idx === -1) return { data: null, error: new Error('Transacción no encontrada.') };
+
+  const updated = { ...local[idx], ...payload };
+  local[idx] = updated;
+  localStorage.setItem(LOCAL_TXN_KEY, JSON.stringify(local));
+  return { data: updated, error: null };
+}
+
+/**
  * Elimina una transacción por su ID.
  * @param {string} id - UUID de la transacción
  * @returns {Promise<{error: Error|null}>}
