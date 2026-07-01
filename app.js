@@ -1699,6 +1699,9 @@ function setTheme(theme, persist = true, rerenderCharts = true) {
   const btn = document.getElementById('themeToggleBtn');
   if (btn) btn.setAttribute('aria-checked', String(isDark));
 
+  const mobileBtn = document.getElementById('mobileThemeToggleBtn');
+  if (mobileBtn) mobileBtn.setAttribute('aria-checked', String(isDark));
+
   const label = document.getElementById('themeToggleLabel');
   if (label) label.textContent = isDark ? 'Modo oscuro' : 'Modo claro';
 
@@ -1745,6 +1748,8 @@ function setupEventListeners() {
 
   // Selector de tema (claro/oscuro)
   document.getElementById('themeToggleBtn')
+    ?.addEventListener('click', toggleTheme);
+  document.getElementById('mobileThemeToggleBtn')
     ?.addEventListener('click', toggleTheme);
 
   document.getElementById('bottomLogoutBtn')
